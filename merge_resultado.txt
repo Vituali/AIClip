@@ -1,0 +1,432 @@
+
+
+// --- .gitattributes ---
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+
+// --- .gitignore ---
+
+# Node.js and npm
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+.pnp/
+.pnp.js
+
+# Electron build output
+dist/
+*.asar
+*.exe
+
+# Development caches
+.cache/
+node_modules/.cache/
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+// --- index.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>App de Merge</title>
+  <style>
+    /* Estilos básicos para a interface */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+    h1 { color: #444; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, textarea { width: calc(100% - 20px); padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    textarea { resize: vertical; }
+    button { padding: 10px 15px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    #status { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Ferramenta de Merge de Arquivos 📂</h1>
+  
+  <div class="form-group">
+    <label for="pasta">Pasta do Projeto:</label>
+    <input type="text" id="pasta" readonly placeholder="Clique no botão para selecionar...">
+    <button id="btnSelecionarPasta" style="margin-top: 5px;">Selecionar Pasta</button>
+  </div>
+
+  <div class="form-group">
+    <label for="nomeArquivo">Nome do Arquivo de Saída (ex: merge_final.txt):</label>
+    <input type="text" id="nomeArquivo" value="merge_resultado.txt">
+  </div>
+
+  <div class="form-group">
+    <label for="ignorar">Itens a Ignorar (separados por vírgula):</label>
+    <textarea id="ignorar" rows="4">.git,node_modules,merge_resultado.txt</textarea>
+  </div>
+
+  <button id="btnMerge">✨ Iniciar Merge</button>
+
+  <div id="status"></div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>
+
+// --- LICENSE ---
+
+MIT License
+
+Copyright (c) 2025 Victor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy...
+
+// --- main.js ---
+
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const path = require('path');
+const { realizarMerge } = require('./merge-logic');
+
+function createWindow () {
+  const mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile('index.html');
+}
+
+app.whenReady().then(() => {
+  createWindow();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+// Escuta o evento 'iniciar-merge' vindo da interface
+ipcMain.on('iniciar-merge', (event, opcoes) => {
+  try {
+    const resultado = realizarMerge(opcoes);
+    event.reply('merge-concluido', `Merge de ${resultado.count} arquivos concluído! Salvo em: ${resultado.caminhoSaida}`);
+  } catch (error) {
+    event.reply('merge-erro', `Ocorreu um erro: ${error.message}`);
+  }
+});
+
+// Escuta o evento para abrir a caixa de diálogo de seleção de pasta
+ipcMain.handle('selecionar-pasta', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  });
+  if (!canceled) {
+    return filePaths[0];
+  }
+});
+
+// --- merge-logic.js ---
+
+const fs = require('fs');
+const path = require('path');
+
+// Lista de extensões que devem ser IGNORADAS.
+const extensoesExcluidas = [  
+  // Imagens
+  '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg', '.webp', '.ico',
+  
+  // Arquivos compactados
+  '.zip', '.rar', '.7z', '.tar', '.gz',
+  
+  // Outros binários ou que não fazem sentido no merge
+  '.exe', '.dll', '.so', '.class', '.jar', '.war', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.o',
+  
+  // Fontes
+  '.ttf', '.otf', '.woff', '.woff2'  // Adicionado para excluir fontes
+];
+
+// Lista de arquivos específicos para ignorar
+const arquivosIgnorar = [
+  'package-lock.json'
+];
+
+// Lista de pastas a ignorar por padrão
+const pastasIgnorarPadrao = [
+  'node_modules',
+  'dist',
+  'build',
+  '.git',
+  'coverage',
+  '.vscode',
+  'node_modules/.cache',
+  'assets/fonts',  // Nova: ignora pasta de fontes
+  'assets/extension',  // Nova: ignora pasta com ZIPs (baseado na memória)
+  'assets/images'  // Nova: ignora pasta com imagens
+];
+
+// Função para ler arquivos recursivamente
+function lerArquivosRecursivo(pasta, ignorar) {
+  let arquivosTodos = [];
+  if (!fs.existsSync(pasta)) return arquivosTodos;
+
+  const itens = fs.readdirSync(pasta);
+  itens.forEach(item => {
+    if (ignorar.includes(item)) return;
+
+    const itemPath = path.join(pasta, item);
+    const stats = fs.statSync(itemPath);
+
+    if (stats.isDirectory()) {
+      arquivosTodos = arquivosTodos.concat(lerArquivosRecursivo(itemPath, ignorar));
+    } else {
+      const extensao = path.extname(itemPath).toLowerCase();
+      const nomeArquivo = path.basename(itemPath);
+      if (!extensoesExcluidas.includes(extensao) && !arquivosIgnorar.includes(nomeArquivo)) {
+        arquivosTodos.push(itemPath);
+      }
+    }
+  });
+  return arquivosTodos;
+}
+
+// Função principal de merge
+function realizarMerge(opcoes) {
+  const { pasta, nomeArquivo, ignorar } = opcoes;
+
+  let conteudoFinal = '';
+  
+  const listaIgnorarCompleta = [...pastasIgnorarPadrao, ...ignorar, nomeArquivo];
+  
+  console.log(`Ignorando pastas: ${listaIgnorarCompleta.join(', ')}`);
+  console.log(`Ignorando arquivos específicos: ${arquivosIgnorar.join(', ')}`);
+  
+  const arquivos = lerArquivosRecursivo(pasta, listaIgnorarCompleta);
+
+  arquivos.forEach(filePath => {
+    try {
+      const fileConteudo = fs.readFileSync(filePath, 'utf-8');
+      const relativePath = path.relative(pasta, filePath);
+      conteudoFinal += `\n\n// --- ${relativePath} ---\n\n`;
+      conteudoFinal += fileConteudo;
+    } catch (err) {
+      console.warn(`Aviso: Não foi possível ler o arquivo ${filePath} como texto. Ignorando.`);
+    }
+  });
+
+  const caminhoSaida = path.join(pasta, nomeArquivo);
+  fs.writeFileSync(caminhoSaida, conteudoFinal);
+  
+  console.log(`Merge concluído: ${caminhoSaida}`);
+  return { caminhoSaida, count: arquivos.length };
+}
+
+module.exports = { realizarMerge };
+
+// --- package.json ---
+
+{
+  "name": "merge-app",
+  "version": "1.0.0",
+  "description": "Um app para dar merge em arquivos de projetos.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Seu Nome",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^38.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.seu-nome.mergeapp",
+    "productName": "Merge App",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "merge-logic.js",
+      "index.html"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
+
+// --- preload.js ---
+
+// preload.js
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  iniciarMerge: (opcoes) => ipcRenderer.send('iniciar-merge', opcoes),
+  onMergeConcluido: (callback) => ipcRenderer.on('merge-concluido', (_event, value) => callback(value)),
+  onMergeErro: (callback) => ipcRenderer.on('merge-erro', (_event, value) => callback(value)),
+  selecionarPasta: () => ipcRenderer.invoke('selecionar-pasta')
+});
+
+// --- README.md ---
+
+# AIClip
+
+AIClip is a lightweight Electron app that merges project files into a single, clean text file for seamless debugging with AI tools. It automatically skips irrelevant files (e.g., `node_modules`, `package-lock.json`, `.ttf`) and lets you customize exclusions via a user-friendly GUI. Perfect for sharing concise codebases with LLMs or reviewing projects without clutter. Built with Electron for cross-platform support.
+
+## Features
+
+- Recursive file merging for text-based files (JS, HTML, JSON, etc.) with clear separators
+- Smart exclusions for binaries, assets (fonts, images), and heavy lockfiles
+- Customizable ignore list via GUI for specific files/folders
+- Ideal for AI debugging: compact output for pasting into AI chat interfaces
+- Runs on Windows, macOS, and Linux
+
+## Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/Vituali/AIClip.git
+   cd AIClip
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run the app:
+
+   ```bash
+   npm start
+   ```
+
+## Usage
+
+1. Launch AIClip with `npm start`.
+2. Click **Select Folder** to choose your project directory.
+3. Enter an output filename (e.g., `merge_resultado.txt`).
+4. Specify files/folders to ignore (e.g., `.git,node_modules,merge_resultado.txt`) in the textarea.
+5. Click **Start Merge** to generate a single text file with your project's code.
+6. Find the output file in your project folder, ready for debugging or sharing with AI tools.
+
+## Building for Distribution
+
+To create a standalone executable (e.g., for Windows):
+
+```bash
+npm run dist
+```
+
+This generates an installer in the `dist/` folder using `electron-builder`.
+
+## Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repo and create a branch (`git checkout -b feature/awesome-idea`).
+2. Make your changes and test with `npm start`.
+3. Commit (`git commit -m "Add awesome feature"`) and push (`git push origin feature/awesome-idea`).
+4. Open a Pull Request with details on your changes.
+
+Report bugs or suggest features via GitHub Issues.
+
+## License
+
+This project is licensed under the MIT License. See LICENSE for details.
+
+## Acknowledgments
+
+- Powered by Electron for cross-platform desktop apps
+
+Inspired by the need to streamline code sharing for AI-assisted debugging
+
+// --- renderer.js ---
+
+// renderer.js
+const btnSelecionarPasta = document.getElementById('btnSelecionarPasta');
+const inputPasta = document.getElementById('pasta');
+const btnMerge = document.getElementById('btnMerge');
+const statusDiv = document.getElementById('status');
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ignorar').placeholder = 'Ex: node_modules, dist, build';
+});
+btnSelecionarPasta.addEventListener('click', async () => {
+  const caminhoPasta = await window.electronAPI.selecionarPasta();
+  if (caminhoPasta) {
+    inputPasta.value = caminhoPasta;
+  }
+});
+
+btnMerge.addEventListener('click', () => {
+  const pasta = inputPasta.value;
+  const nomeArquivo = document.getElementById('nomeArquivo').value;
+  const ignorar = document.getElementById('ignorar').value.split(',').map(item => item.trim());
+
+  if (!pasta || !nomeArquivo) {
+    statusDiv.textContent = 'Erro: Selecione uma pasta e defina um nome para o arquivo de saída.';
+    statusDiv.style.color = 'red';
+    return;
+  }
+
+  statusDiv.textContent = 'Processando...';
+  statusDiv.style.color = 'black';
+
+  const opcoes = {
+    pasta,
+    nomeArquivo,
+    ignorar
+  };
+
+  window.electronAPI.iniciarMerge(opcoes);
+});
+
+window.electronAPI.onMergeConcluido((mensagem) => {
+  statusDiv.textContent = mensagem;
+  statusDiv.style.color = 'green';
+});
+
+window.electronAPI.onMergeErro((mensagem) => {
+  statusDiv.textContent = mensagem;
+  statusDiv.style.color = 'red';
+});

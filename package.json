@@ -1,0 +1,36 @@
+{
+  "name": "merge-app",
+  "version": "1.0.0",
+  "description": "Um app para dar merge em arquivos de projetos.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Seu Nome",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^38.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.seu-nome.mergeapp",
+    "productName": "Merge App",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "merge-logic.js",
+      "index.html"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

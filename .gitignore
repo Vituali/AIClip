@@ -1,0 +1,47 @@
+# Node.js and npm
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+.pnp/
+.pnp.js
+
+# Electron build output
+dist/
+*.asar
+*.exe
+
+# Development caches
+.cache/
+node_modules/.cache/
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.bak

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>App de Merge</title>
+  <style>
+    /* Estilos básicos para a interface */
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
+    h1 { color: #444; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, textarea { width: calc(100% - 20px); padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    textarea { resize: vertical; }
+    button { padding: 10px 15px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+    button:hover { background-color: #0056b3; }
+    #status { margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Ferramenta de Merge de Arquivos 📂</h1>
+  
+  <div class="form-group">
+    <label for="pasta">Pasta do Projeto:</label>
+    <input type="text" id="pasta" readonly placeholder="Clique no botão para selecionar...">
+    <button id="btnSelecionarPasta" style="margin-top: 5px;">Selecionar Pasta</button>
+  </div>
+
+  <div class="form-group">
+    <label for="nomeArquivo">Nome do Arquivo de Saída (ex: merge_final.txt):</label>
+    <input type="text" id="nomeArquivo" value="merge_resultado.txt">
+  </div>
+
+  <div class="form-group">
+    <label for="ignorar">Itens a Ignorar (separados por vírgula):</label>
+    <textarea id="ignorar" rows="4">.git,node_modules,merge_resultado.txt</textarea>
+  </div>
+
+  <button id="btnMerge">✨ Iniciar Merge</button>
+
+  <div id="status"></div>
+
+  <script src="./renderer.js"></script>
+</body>
+</html>

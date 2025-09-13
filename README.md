@@ -21,7 +21,7 @@ AIClip is a lightweight Electron app that merges project files into a single, cl
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Vituali/AIClip.git
+   git clone https://github.com/vituali/AIClip.git
    cd AIClip
    ```
 
@@ -46,6 +46,10 @@ AIClip is a lightweight Electron app that merges project files into a single, cl
 5. Click **Start Merge** to generate a single text file with your project's code.
 6. Find the output file in your project folder, ready for debugging or sharing with AI tools.
 
+## Download
+
+Download the portable Windows executable (v0.1.0) from the v0.1.0 release. No installation required!
+
 ## Building for Distribution
 
 To create a standalone executable (e.g., for Windows):
@@ -54,7 +58,7 @@ To create a standalone executable (e.g., for Windows):
 npm run dist
 ```
 
-This generates an installer in the `dist/` folder using `electron-builder`.
+This generates a portable .exe in the `dist/` folder using `electron-builder`.
 
 ## Contributing
 
@@ -95,7 +99,7 @@ AIClip é um aplicativo Electron leve que combina arquivos de projetos em um ún
 1. Clone o repositório:
 
    ```bash
-   git clone https://github.com/Vituali/AIClip.git
+   git clone https://github.com/vituali/AIClip.git
    cd AIClip
    ```
 
@@ -120,6 +124,10 @@ AIClip é um aplicativo Electron leve que combina arquivos de projetos em um ún
 5. Clique em **Iniciar Merge** para gerar um único arquivo de texto com o código do projeto.
 6. Encontre o arquivo de saída na pasta do projeto, pronto para depuração ou compartilhamento com ferramentas de IA.
 
+## Download
+
+Baixe o executável portátil para Windows (v0.1.0) na release v0.1.0. Não requer instalação!
+
 ## Compilando para Distribuição
 
 Para criar um executável independente (ex.: para Windows):
@@ -128,7 +136,7 @@ Para criar um executável independente (ex.: para Windows):
 npm run dist
 ```
 
-Isso gera um instalador na pasta `dist/` usando o `electron-builder`.
+Isso gera um .exe portátil na pasta `dist/` usando o `electron-builder`.
 
 ## Contribuição
 

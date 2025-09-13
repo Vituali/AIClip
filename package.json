@@ -8,15 +8,15 @@
     "dist": "electron-builder"
   },
   "keywords": [],
-  "author": "Seu Nome",
+  "author": "Victor",
   "license": "ISC",
   "devDependencies": {
     "electron": "^38.1.0",
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "com.seu-nome.mergeapp",
-    "productName": "Merge App",
+    "appId": "com.victor.mergeapp",
+    "productName": "AIClip",
     "files": [
       "main.js",
       "preload.js",
@@ -25,12 +25,13 @@
       "index.html"
     ],
     "win": {
-      "target": "nsis",
+      "target": "portable",
       "icon": "build/icon.ico"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    "portable": {
+      "artifactName": "AIClip-${version}-portable.exe"
+    },
+    "asarUnpack": ["**/*.node"],
+    "buildDependenciesFromSource": false
   }
 }

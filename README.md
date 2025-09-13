@@ -48,7 +48,7 @@ AIClip is a lightweight Electron app that merges project files into a single, cl
 
 ## Download
 
-Download the portable Windows executable (v0.1.0) from the v0.1.0 release. No installation required!
+Download the portable Windows executable (v0.1.0) from [AIClip v0.1.0](https://github.com/Vituali/AIClip/releases/download/v0.1.0/AIClip-0.1.0-portable.exe)
 
 ## Building for Distribution
 
@@ -126,7 +126,7 @@ AIClip é um aplicativo Electron leve que combina arquivos de projetos em um ún
 
 ## Download
 
-Baixe o executável portátil para Windows (v0.1.0) na release v0.1.0. Não requer instalação!
+Baixe o executável portátil para Windows (v0.1.0) em [AIClip v0.1.0](https://github.com/Vituali/AIClip/releases/download/v0.1.0/AIClip-0.1.0-portable.exe)
 
 ## Compilando para Distribuição
 
